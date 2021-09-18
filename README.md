@@ -23,4 +23,4 @@ After installation, the user can relaunch this installer to:
 2. Update the framework settings.
 3. Uninstalls the Chrome OS image. (the user can remove Grub2Win with Windows' program manager)
 
-Possible bugs: none at the moment, report bugs on t.me/chromeosforpc.
+Possible bugs: none at the moment, report bugs on https://t.me/chromeosforpc.

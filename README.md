@@ -24,3 +24,5 @@ After installation, the user can relaunch this installer to:
 3. Uninstalls the Chrome OS image. (the user can remove Grub2Win with Windows' program manager)
 
 Possible bugs: none at the moment, report bugs on https://t.me/chromeosforpc.
+
+TODO: WSL distro checker may break. Please add a better algorithm. If you want to contribute, please ask me on Telegram. ;)

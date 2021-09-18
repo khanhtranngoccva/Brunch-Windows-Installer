@@ -1,7 +1,7 @@
 # Brunch-Windows-Installer
 Installs the Brunch framework to run Chrome OS on a Windows device, without having to manually install WSL or a bootloader.
 
-Please note that this installer can only run on Windows 10 and up with UEFI boot mode and supporting WSL. Secure Boot must be disabled to run the software.
+Please note that this installer can only run on Windows 10 and up with UEFI boot mode and supporting WSL. Secure Boot must be disabled to run the software. (until other maintainers add them)
 
 (Sure there are ways to install GRUB without having to turn this off, but all of this can't be run on NTFS, which means that partitioning is a must in all these cases.)
 

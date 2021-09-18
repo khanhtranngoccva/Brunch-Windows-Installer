@@ -7,7 +7,7 @@ Please note that this installer can only run on Windows 10 and up with UEFI boot
 
 This installer will not affect any partitions or data.
 
-Due to the nature of the installer, please disable Windows Defender before executing.
+Due to the nature of the installer (read below), please disable Windows Defender before executing.
 
 This installer does the following:
 1. Examines system compatibility with Brunch.

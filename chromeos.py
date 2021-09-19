@@ -121,7 +121,6 @@ def update_bootloader_button():
                            basic_toggle_tracker)
     __ = WindowError("Bootloader updated!", color="green", tx_color="white")
     __.mainloop()
-    exit()
 
 
 def uninstall_chrome_os_button():
@@ -147,10 +146,10 @@ def uninstall_chrome_os_button():
     }""", "\n")
         with open("C:\\grub2\\userfiles\\usersection.cfg", "w") as f:
             print(grub_file_new, file=f)
+    main_install_window.destroy()
     _ = WindowError("Chrome OS has been uninstalled. You can now exit.", color="green", tx_color="white",
                     no_text="Exit")
     _.mainloop()
-    main_install_window.destroy()
     exit()
 
 
@@ -176,7 +175,7 @@ try:
         if "intel" in cpu.casefold():
             if "core" in cpu.casefold():
                 if "i3" not in cpu.casefold() and "i5" not in cpu.casefold() and "i7" not in cpu.casefold() \
-                        and "i9" not in cpu.casefold():  # core solo or core 2 duo
+                        and "i9" not in cpu.casefold() and "m3" not in cpu.casefold():  # core solo or core 2 duo
                     _ = WindowError("Compatibility check failed!",
                                     "Your Intel Core CPU is too old to run Chrome OS.",
                                     "https://github.com/sebanc/brunch/wiki/CPUs-&-Recoveries",

@@ -30,6 +30,7 @@ After installation, the user can relaunch this installer to:
 Possible bugs: For users, none at the moment, report bugs on https://t.me/chromeosforpc.
 
 Intel Core m3 CPUs are not yet added into the compatibility check.
+Fixed in source code, but not yet compiled.
 
 For contributors, the function stops when an error window is called. I had a workaround for the time being, but this may not be sustainable.
 

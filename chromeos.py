@@ -93,7 +93,7 @@ def install_chrome_os():
     install_cros_tools()
     chromeos_dir_add = "bash -c \"sudo mkdir /mnt/{}/ChromeOS\"".format(disk_to_install.lower())
     os.popen(chromeos_dir_add)
-    print("DUMPING IMAGE TO DISK. DO NOT EXIT THE PROGRAM.")
+    print("CREATING SYSTEM IMAGE NOW. DO NOT EXIT THE PROGRAM.")
     with open("install.log", "w") as f:
         print(os.popen("bash TEMP/Brunch/chromeos-install.sh -src TEMP/ChromeOS/{0} "
                        "-dst /mnt/{1}/ChromeOS/ChromeOS.img -s {2}".format(image_name.strip(".zip"),
@@ -231,9 +231,7 @@ try:
                             )
             _.mainloop()
             exit()
-        with open("log.txt", "w") as file:
-            print(f"Linux install status: {is_linux_enabled('debian')}")
-
+        print(f"Linux install status: {is_linux_enabled('debian')}")
         disk_dict = {}
         ssd_dict = {}
         installed_disk = None

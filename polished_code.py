@@ -44,12 +44,14 @@ def download_brunch():
     After that unpacks the file.
     :return:
     """
+    # this file's structure is close to a dictionary. The simplest approach is to change the case of the booleans and
+    # replace null with None.
+    # this approach breaks any filenames with "true", "null", or "false".
+    # although almost no one will use such filenames, any files with these substrings will break.
+    # NEED TO find a better approach to make Python accept this dictionary.
     brunch_conf = os.popen("curl https://api.github.com/repos/sebanc/brunch/releases/latest").read(). \
-        replace("false", "False").replace("null", "None")
-    # print(brunch_conf)
+        replace("false", "False").replace("null", "None").replace('true', "True")
     brunch_config = eval(brunch_conf)
-    # print(brunch_config)
-    # print(brunch_config)
     to_download = brunch_config["assets"][0]["browser_download_url"]
     file_to_download = os.path.basename(to_download)
     if not os.path.exists(f".\\TEMP\\{file_to_download}.downloaded"):  # a stub file
@@ -64,7 +66,7 @@ def download_brunch():
 def download_recovery(recovery_name, recovery_list):
     """
     Using the recovery list provided, downloads a Chrome OS recovery image. If it already exists with a stub, skips.
-    After that, unpacks the file.
+    After that, unpacks the file. Filename will be returned to pass into the install command.
     :param recovery_name:
     :param recovery_list:
     :return:
@@ -111,6 +113,7 @@ def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker):
     :param bt_tracker: Similar
     :return:
     """
+    # STEP 1: Generates the menu entry and headers
     parameters = {k: v.get() for k, v in p_tracker.items()}
     advanced_parameters = {k: v.get() for k, v in ap_tracker.items()}
     basic_toggles = {k: v.get() for k, v in bt_tracker.items()}
@@ -146,30 +149,37 @@ def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker):
                                      "**********\n#"
     user_section_start = "# start-grub2win-user-section"
     user_section_end = "# end-grub2win-user-section"
+    # STEP 2: Add a temporary entry to grub.cfg if not existing
     with open("C:\\grub2\\grub.cfg", "r") as grub_file:
         grub_file_temp = grub_file.read()
     if grub_redirect in grub_file_temp:
-        grub_file_new = grub_file_temp
+        grub_file_new = grub_file_temp  # no changes
     elif user_section_end in grub_file_temp and user_section_start in grub_file_temp:
         grub_file_new = grub_file_temp.replace(user_section_start_full_syntax,
                                                user_section_start_full_syntax + "\n\n" + grub_redirect + "\n\n")
     else:
-        grub_file_new = grub_file_temp + new_user_section
+        grub_file_new = grub_file_temp + "\n\n" + new_user_section + "\n\n"
+    while "\n\n" in grub_file_new:
+        grub_file_new = grub_file_new.replace("\n\n", "\n")  # replaces empty newlines
     with open("C:\\grub2\\grub.cfg", "w") as grub_file:
         print(grub_file_new, file=grub_file)
+    # STEP 3: Add a permanent entry to the usersection.cfg file if not existing
     if not os.path.exists("C:\\grub2\\userfiles\\usersection.cfg"):
         with open("C:\\grub2\\userfiles\\usersection.cfg", "w") as usercfg_file:
             print(file=usercfg_file)
     with open("C:\\grub2\\userfiles\\usersection.cfg", "r") as usercfg_file:
         usercfg_file_temp = usercfg_file.read()
     if grub_redirect in usercfg_file_temp:
-        pass
+        usercfg_file_new = usercfg_file_temp
     else:
-        with open("C:\\grub2\\userfiles\\usersection.cfg", "a") as usercfg_file:  # needs newlines
-            print("\n\n" + grub_redirect + "\n\n", file=usercfg_file)
-    if not os.path.exists("C:\\grub2\\ChromeOS"):
-        os.mkdir("C:\\grub2\\ChromeOS")
-    with open("C:\\grub2\\ChromeOS\\chromeos.cfg", "w") as chromeos_cfg:  # does not need newlines
+        usercfg_file_new = usercfg_file_temp + "\n\n" + grub_redirect + "\n\n"
+    while "\n\n" in usercfg_file_new:
+        usercfg_file_new = usercfg_file_new.replace("\n\n", "\n")  # replaces empty newlines
+    with open("C:\\grub2\\userfiles\\usersection.cfg", "w") as usercfg_file:
+        print(usercfg_file_new, file=usercfg_file)
+    # STEP 4: add/overwrite boot instructions.
+    os.makedirs("C:\\grub2\\ChromeOS", exist_ok=True)
+    with open("C:\\grub2\\ChromeOS\\chromeos.cfg", "w") as chromeos_cfg:
         print(grub_output, file=chromeos_cfg)
 
 
@@ -390,7 +400,8 @@ def is_linux_enabled(distro):
 
 def test_systemdrive(_):
     """Detect if the partition is the Windows system partition,
-    then warns the user that the program will disable hibernate."""
+    then warns the user that the program will disable hibernation.
+    If the user choose not to disable hibernation, quits the program."""
     if f'{_}:' == os.getenv("systemdrive"):
         __ = WindowError("Warning!",
                          "You chose to install on the Windows partition."
@@ -399,6 +410,10 @@ def test_systemdrive(_):
                          " otherwise click \"Exit\" to abort the install.",
                          yes_text="Exit", yes_command="exit()", color="yellow", tx_color="black")
         __.mainloop()
+        if is_admin():
+            os.popen("powercfg /h off")
+        else:
+            sys.exit()
 
 
 def install_grub2win():

@@ -11,6 +11,7 @@ import re
 import win32file
 import shutil
 from sys import exit
+import json
 
 
 def install_cros_tools():
@@ -49,10 +50,10 @@ def download_brunch():
     # this approach breaks any filenames with "true", "null", or "false".
     # although almost no one will use such filenames, any files with these substrings will break.
     # NEED TO find a better approach to make Python accept this dictionary.
-    brunch_conf = os.popen("curl https://api.github.com/repos/sebanc/brunch/releases/latest").read(). \
-        replace("false", "False").replace("null", "None").replace('true', "True")
-    brunch_config = eval(brunch_conf)
+    brunch_conf_file = os.popen("curl https://api.github.com/repos/sebanc/brunch/releases/latest").read()
+    brunch_config = json.loads(brunch_conf_file)
     to_download = brunch_config["assets"][0]["browser_download_url"]
+    print(to_download)
     file_to_download = os.path.basename(to_download)
     if not os.path.exists(f".\\TEMP\\{file_to_download}.downloaded"):  # a stub file
         download_url(to_download, ".\\TEMP")
@@ -257,9 +258,11 @@ def get_drives():
 def install_wsl():
     """Installs WSL and its dependencies, then reboots. Requires admin permission."""
     if is_admin():
-        print(os.popen(
-            "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart").read())
-        print(os.popen("dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart").read())
+        print("Installing Windows Subsystem for Linux. The system will restart in about a minute.")
+        os.popen(
+            "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart").read()
+        print("Installing Virtual Machine Platform. The system will restart in about 30 seconds.")
+        os.popen("dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart").read()
         os.popen("shutdown.exe /r /t 0")
 
 
@@ -398,33 +401,42 @@ def is_linux_enabled(distro):
         return "LINUX_INSTALLED"
 
 
-def test_systemdrive(_):
+def test_hiberfilsys(_):
     """Detect if the partition is the Windows system partition,
     then warns the user that the program will disable hibernation.
     If the user choose not to disable hibernation, quits the program."""
-    if f'{_}:' == os.getenv("systemdrive"):
+    if f'{_}:' == os.getenv("systemdrive") or os.path.exists(f"{_}:\\hiberfil.sys"):
         __ = WindowError("Warning!",
-                         "You chose to install on the Windows partition."
-                         " Fast Startup can render the system image read only and cause errors to the programs. "
-                         "Click \"Dismiss\" to continue and disable hibernation on Windows,"
+                         "You used a disk that either is the Windows drive or hibernation files have been detected."
+                         " Fast Startup can render the system image read only and cause errors. ",
+                         "Click \"Install anyway\" to continue and disable hibernation on Windows,"
                          " otherwise click \"Exit\" to abort the install.",
-                         yes_text="Exit", yes_command="exit()", color="yellow", tx_color="black")
+                         yes_text="Exit", yes_command="exit()", color="yellow", tx_color="black",
+                         no_text="Install anyway")
         __.mainloop()
         if is_admin():
-            os.popen("powercfg /h off")
+            os.popen("powercfg /h off").read()
         else:
-            sys.exit()
+            exit()
 
 
 def install_grub2win():
-    """Installs grub2win in the background to C:. The update code updates the grub2win's usersection"""
-    if not os.path.exists("C:\\grub2\\g2bootmgr") or not os.path.exists("C:\\grub2\\winsource"):
+    """Installs grub2win in the background to C: if hasn't been installed there."""
+    grub_directories = ["g2bootmgr", "userfiles", "winsource", "windata", "grub.cfg"]
+    if not all([os.path.exists(f"C:\\grub2\\{grub_dir}") for grub_dir in grub_directories]):
         if not os.path.exists("grub2win.zip"):
             _ = WindowError(
                 "The installation cannot complete successfully. Grub2Win bootloader .zip archive is missing.",
-                "You can remove the installation .img file, or install Grub2Win manually.")
+                "You can remove the installation .img file and start over, or install and configure Grub2Win manually"
+                " to complete the installation.")
             _.mainloop()
             exit()
         else:
             shutil.unpack_archive("grub2win.zip", ".\\TEMP", "zip")
-            print(os.popen(".\\TEMP\\install\\winsource\\grub2win.exe AutoInstall Quiet").read())
+            os.popen(".\\TEMP\\install\\winsource\\grub2win.exe AutoInstall Quiet").read()
+    else:
+        print("Grub2Win has already been installed. Skipping.")
+
+
+if __name__ == '__main__':
+    download_brunch()

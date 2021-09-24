@@ -71,7 +71,7 @@ def install_chrome_os():
         _.mainloop()
         return None
     inst_vol_free = int([i / 1024 ** 3 for i in disk_usage(path.realpath(f'{disk_to_install}:\\'))][2])
-    if install_size + 5 > inst_vol_free:
+    if install_size + 7 > inst_vol_free:  # including downloaded files
         _ = WindowError("Not enough space for the installation. Try a smaller installation size.")
         _.mainloop()
         return None
@@ -87,7 +87,7 @@ def install_chrome_os():
                          yes_command="exit()",
                          yes_text="Abort", color="yellow", tx_color="black")
         __.mainloop()
-    test_systemdrive(disk_to_install)
+    test_hiberfilsys(disk_to_install)
     download_brunch()
     image_name = download_recovery(recovery_name, all_recoveries)
     install_cros_tools()
@@ -96,14 +96,14 @@ def install_chrome_os():
     print("CREATING SYSTEM IMAGE NOW. DO NOT EXIT THE PROGRAM.")
     with open("install.log", "w") as f:
         print(os.popen("bash TEMP/Brunch/chromeos-install.sh -src TEMP/ChromeOS/{0} "
-                       "-dst /mnt/{1}/ChromeOS/ChromeOS.img -s {2}".format(image_name.strip(".zip"),
+                       "-dst /mnt/{1}/ChromeOS/ChromeOS.img -s {2}".format(image_name.removesuffix(".zip"),
                                                                            disk_to_install.lower(),
                                                                            install_size)).read(), file=f)
     install_grub2win()
     update_grub2win_config(disk_to_install, kernel, parameter_tracker, advanced_parameter_tracker, basic_toggle_tracker)
     with open(f"{disk_to_install}:\\ChromeOS\\chromeos_installed", "w") as f:
         print(file=f)
-    __ = WindowError("Google Chrome OS installed!", color="green", tx_color="white")
+    __ = WindowError("Google Chrome OS installed!", color="green", tx_color="white", no_text="Exit")
     __.mainloop()
 
 

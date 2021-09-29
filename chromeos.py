@@ -18,7 +18,8 @@ kernel_dict = {
 }
 basic_toggle_dict = {
     "console=": "Disable verbose output to console",
-    "cros_debug": "Enable developer mode. Disable to enable SafetyNet features such as Netflix."
+    "cros_debug": "Enable developer mode. Disable to use SafetyNet and Widevine L3 features. "
+                  "Cannot be changed by Brunch manager."
 }
 basic_toggle_tracker = {"cros_debug": 1}  # select default enabled
 parameter_dict = {"enable_updates": "Allow native Chrome OS updates, disable to improve build stability",
@@ -306,14 +307,16 @@ try:
         title1.grid(row=0, column=0, sticky="nw")
         exit_button = tkinter.Button(title_frame, text="Exit", command=exit)
         exit_button.grid(row=0, column=4, sticky="ne")
-        check_frame = tkinter.LabelFrame(parameter_checkbox_frame, text="Parameters")
+        check_frame = tkinter.LabelFrame(parameter_checkbox_frame, text="Bootloader parameters")
         check_frame.grid(row=1, column=0, sticky="new")
-        advanced_check_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Advanced parameters")
+        advanced_check_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Advanced bootloader parameters")
         advanced_check_frame.grid(row=2, column=0, sticky="new")
-        basic_toggle_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Basic toggles")
+        basic_toggle_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Basic toggles (bootloader)")
         basic_toggle_frame.grid(row=3, column=0, sticky="new")
-        misc_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Miscellaneous")
+        misc_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Miscellaneous (bootloader)")
         misc_frame.grid(row=4, column=0, sticky="new")
+        unstable_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Bleeding edge releases")
+        unstable_frame.grid(row=5, column=0, sticky="new")
         native_settings_variable = tkinter.IntVar()
         native_settings_variable.set(0)
         unstable_variable = tkinter.IntVar()
@@ -351,10 +354,11 @@ try:
             tkinter.Checkbutton(basic_toggle_frame, text=item, variable=basic_toggle_tracker[key]).pack(side="top",
                                                                                                         anchor="nw")
         native_button = tkinter.Checkbutton(misc_frame,
-                                            text="Use Brunch configuration manager (unstable builds only)",
+                                            text="Use Brunch configuration manager instead of configuring through "
+                                                 "this app (unstable builds only). ",
                                             variable=native_settings_variable)
         native_button.pack(side="top", anchor="nw")
-        unstable_button = tkinter.Checkbutton(misc_frame,
+        unstable_button = tkinter.Checkbutton(unstable_frame,
                                               text="Use unstable releases of Brunch",
                                               variable=unstable_variable)
         unstable_button.pack(side="top", anchor="nw")

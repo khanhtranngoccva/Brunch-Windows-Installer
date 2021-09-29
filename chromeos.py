@@ -46,16 +46,21 @@ advanced_parameter_tracker = {"i915.enable_fbc": 1, "i915.enable_psr": 1}
 
 
 def install_chrome_os():
-    try:
-        if installed_disk:
-            disk_to_install = installed_disk
-        else:
+    if installed_disk:
+        disk_to_install = installed_disk
+    else:
+        try:
             disk_entry = disk_list[disk_list_box.curselection()[0]]
             disk_to_install = disk_dict[disk_entry]
+            # print(recovery_name)
+        except IndexError:
+            _ = WindowError("Please select the drive to install.")
+            _.mainloop()
+            return None
+    try:
         recovery_name = recoveries_list[recoveries_list_box.curselection()[0]]
-        # print(recovery_name)
     except IndexError:
-        _ = WindowError("Please select the drive (if not installed) and recovery build to install.")
+        _ = WindowError("Please select the recovery build to use.")
         _.mainloop()
         return None
     native_brunch = native_settings_variable.get()
@@ -93,12 +98,19 @@ def install_chrome_os():
                          "The sign in UI will appear before the Android container and "
                          "some other components are loaded properly,"
                          " and signing in within the first 2 minutes will cause them to crash."
-                         "Press 'Abort' to cancel the installation, or click 'Dismiss' to proceed anyway.",
+                         "Press 'Abort' to cancel the installation, or click 'Proceed' to continue anyway.",
                          yes_command="exit()",
-                         yes_text="Abort", color="yellow", tx_color="black")
+                         yes_text="Abort", color="yellow", tx_color="black", no_text="Proceed")
         __.mainloop()
     test_hiberfilsys(disk_to_install)
-    download_brunch()
+    if unstable_variable.get():
+        __ = WindowError("You're downloading unstable releases. Bugs may occur.",
+                         yes_command="exit()",
+                         yes_text="Abort", color="yellow", tx_color="black", no_text="Proceed")
+        __.mainloop()
+        download_brunch(unstable=True)
+    else:
+        download_brunch(unstable=False)
     image_name = download_recovery(recovery_name, all_recoveries)
     install_cros_tools()
     chromeos_dir_add = "bash -c \"sudo mkdir /mnt/{}/ChromeOS\"".format(disk_to_install.lower())
@@ -108,7 +120,7 @@ def install_chrome_os():
         print(os.popen("bash TEMP/Brunch/chromeos-install.sh -src TEMP/ChromeOS/{0} "
                        "-dst /mnt/{1}/ChromeOS/ChromeOS.img -s {2}".format(image_name.removesuffix(".zip"),
                                                                            disk_to_install.lower(),
-                                                                           install_size)).read(), file=f)
+                                                                           install_size)).read())
     install_grub2win()
     update_grub2win_config(disk_to_install, kernel, parameter_tracker, advanced_parameter_tracker, basic_toggle_tracker,
                            native_brunch)
@@ -148,18 +160,14 @@ def uninstall_chrome_os_button():
         with open("C:\\grub2\\grub.cfg") as f:
             grub_file_temp = f.read()
             grub_file_new = grub_file_temp.replace(
-                """menuentry 'Google Chrome OS'  --class custom  --class icon-android {
-    source $prefix/ChromeOS/chromeos.cfg
-    }""", "\n")
+                "source $prefix/ChromeOS/chromeos.cfg", "\n")
         with open("C:\\grub2\\grub.cfg", "w") as f:
             print(grub_file_new, file=f)
     if os.path.exists("C:\\grub2\\userfiles\\usersection.cfg"):
         with open("C:\\grub2\\userfiles\\usersection.cfg") as f:
             grub_file_temp = f.read()
             grub_file_new = grub_file_temp.replace(
-                """menuentry 'Google Chrome OS'  --class custom  --class icon-android {
-    source $prefix/ChromeOS/chromeos.cfg
-    }""", "\n")
+                "source $prefix/ChromeOS/chromeos.cfg", "\n")
         with open("C:\\grub2\\userfiles\\usersection.cfg", "w") as f:
             print(grub_file_new, file=f)
     main_install_window.destroy()
@@ -304,10 +312,12 @@ try:
         advanced_check_frame.grid(row=2, column=0, sticky="new")
         basic_toggle_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Basic toggles")
         basic_toggle_frame.grid(row=3, column=0, sticky="new")
-        native_settings_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Native Brunch manager")
-        native_settings_frame.grid(row=4, column=0, sticky="new")
+        misc_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Miscellaneous")
+        misc_frame.grid(row=4, column=0, sticky="new")
         native_settings_variable = tkinter.IntVar()
         native_settings_variable.set(0)
+        unstable_variable = tkinter.IntVar()
+        unstable_variable.set(0)
         recoveries_frame = tkinter.LabelFrame(installer_list_frame, text="Builds", padx=4, pady=4)
         recoveries_frame.grid(row=0, column=0, sticky="new")
         recoveries_list_var = tkinter.StringVar(value=recoveries_list)  # takes in a list as well
@@ -340,10 +350,14 @@ try:
             basic_toggle_tracker[key] = tkinter.IntVar(main_install_window, default_value)
             tkinter.Checkbutton(basic_toggle_frame, text=item, variable=basic_toggle_tracker[key]).pack(side="top",
                                                                                                         anchor="nw")
-        native_button = tkinter.Checkbutton(native_settings_frame,
-                                            text="Use Brunch configuration manager (experimental/unstable)",
+        native_button = tkinter.Checkbutton(misc_frame,
+                                            text="Use Brunch configuration manager (unstable builds only)",
                                             variable=native_settings_variable)
         native_button.pack(side="top", anchor="nw")
+        unstable_button = tkinter.Checkbutton(misc_frame,
+                                              text="Use unstable releases of Brunch",
+                                              variable=unstable_variable)
+        unstable_button.pack(side="top", anchor="nw")
         install_button_label = tkinter.StringVar()
         install_button = tkinter.Button(action_buttons_frame, textvariable=install_button_label,
                                         command=install_chrome_os,

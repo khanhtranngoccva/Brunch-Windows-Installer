@@ -39,10 +39,11 @@ def is_wsl_framework_installed():
         "VirtualMachinePlatform") and shutil.which("bash") and shutil.which("wsl")
 
 
-def download_brunch():
+def download_brunch(unstable=False):
     """
     Checks if brunch has already been downloaded, using the .txt file. Otherwise downloads the file.
     After that unpacks the file.
+    The user can choose to download the unstable release by specifying unstable=True.
     :return:
     """
     # this file's structure is close to a dictionary. The simplest approach is to change the case of the booleans and
@@ -50,7 +51,10 @@ def download_brunch():
     # this approach breaks any filenames with "true", "null", or "false".
     # although almost no one will use such filenames, any files with these substrings will break.
     # NEED TO find a better approach to make Python accept this dictionary.
-    brunch_conf_file = os.popen("curl https://api.github.com/repos/sebanc/brunch/releases/latest").read()
+    if unstable:
+        brunch_conf_file = os.popen("curl https://api.github.com/repos/sebanc/brunch-unstable/releases/latest").read()
+    else:
+        brunch_conf_file = os.popen("curl https://api.github.com/repos/sebanc/brunch/releases/latest").read()
     brunch_config = json.loads(brunch_conf_file)
     to_download = brunch_config["assets"][0]["browser_download_url"]
     print(to_download)
@@ -138,7 +142,9 @@ def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker, use_na
             "\tsource (loop,12)/efi/boot/settings.cfg",
             "\tif [ -z $verbose ] -o [ $verbose -eq 0 ]; then",
             "\t\tlinux (loop,7)/$kernel boot=local noresume noswap loglevel=7 disablevmx=off \\",
-            f'\t\tchromeos_bootsplash=$chromeos_bootsplash cros_secure {basic_toggles_string} $cmdline_params '
+            f'\t\tchromeos_bootsplash=$chromeos_bootsplash cros_secure '
+            f'{basic_toggles_string if "console=" in basic_toggles_string else basic_toggles_string + " console="} '
+            f'$cmdline_params '
             f'options=$options loop.max_part=16 img_uuid=$img_uuid img_path=$img_path vt.global_cursor_default=0 '
             f'brunch_bootsplash=$brunch_bootsplash quiet',
             "\telse",
@@ -471,7 +477,3 @@ def install_grub2win():
             os.popen(".\\TEMP\\install\\winsource\\grub2win.exe AutoInstall Quiet").read()
     else:
         print("Grub2Win has already been installed. Skipping.")
-
-
-if __name__ == '__main__':
-    download_brunch()

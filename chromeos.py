@@ -53,13 +53,23 @@ def install_chrome_os():
             disk_entry = disk_list[disk_list_box.curselection()[0]]
             disk_to_install = disk_dict[disk_entry]
         recovery_name = recoveries_list[recoveries_list_box.curselection()[0]]
-        kernel_entry = kernel_list[kernel_listbox.curselection()[0]]
-        kernel = kernel_dict[kernel_entry]
         # print(recovery_name)
     except IndexError:
-        _ = WindowError("Please select the location, recovery build to install and the kernel for the bootloader.")
+        _ = WindowError("Please select the drive (if not installed) and recovery build to install.")
         _.mainloop()
         return None
+    native_brunch = native_settings_variable.get()
+    if native_brunch:
+        kernel = "5.4"  # filler for function, no effect
+        print("Native Brunch manager enabled.")
+    else:
+        try:
+            kernel_entry = kernel_list[kernel_listbox.curselection()[0]]
+            kernel = kernel_dict[kernel_entry]
+        except IndexError:
+            _ = WindowError("Please select the kernel for the bootloader.")
+            _.mainloop()
+            return None
     try:
         install_size = int(size_entry.get())
     except ValueError:
@@ -100,7 +110,8 @@ def install_chrome_os():
                                                                            disk_to_install.lower(),
                                                                            install_size)).read(), file=f)
     install_grub2win()
-    update_grub2win_config(disk_to_install, kernel, parameter_tracker, advanced_parameter_tracker, basic_toggle_tracker)
+    update_grub2win_config(disk_to_install, kernel, parameter_tracker, advanced_parameter_tracker, basic_toggle_tracker,
+                           native_brunch)
     with open(f"{disk_to_install}:\\ChromeOS\\chromeos_installed", "w") as f:
         print(file=f)
     __ = WindowError("Google Chrome OS installed!", color="green", tx_color="white", no_text="Exit")
@@ -108,17 +119,22 @@ def install_chrome_os():
 
 
 def update_bootloader_button():
-    try:
-        kernel_entry = kernel_list[kernel_listbox.curselection()[0]]
-        kernel = kernel_dict[kernel_entry]
-    except IndexError:
-        _ = WindowError("Please select the kernel for the bootloader.")
-        _.mainloop()
-        return None
+    native_brunch = native_settings_variable.get()
+    if native_brunch:
+        kernel = "5.4"  # filler
+        print("Native Brunch manager enabled.")
+    else:
+        try:
+            kernel_entry = kernel_list[kernel_listbox.curselection()[0]]
+            kernel = kernel_dict[kernel_entry]
+        except IndexError:
+            _ = WindowError("Please select the kernel for the bootloader.")
+            _.mainloop()
+            return None
     disk_to_install = installed_disk
     install_grub2win()
     update_grub2win_config(disk_to_install, kernel, parameter_tracker, advanced_parameter_tracker,
-                           basic_toggle_tracker)
+                           basic_toggle_tracker, native_brunch)
     __ = WindowError("Bootloader updated!", color="green", tx_color="white")
     __.mainloop()
 
@@ -288,6 +304,10 @@ try:
         advanced_check_frame.grid(row=2, column=0, sticky="new")
         basic_toggle_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Basic toggles")
         basic_toggle_frame.grid(row=3, column=0, sticky="new")
+        native_settings_frame = tkinter.LabelFrame(other_parameter_checkbox_frame, text="Native Brunch manager")
+        native_settings_frame.grid(row=4, column=0, sticky="new")
+        native_settings_variable = tkinter.IntVar()
+        native_settings_variable.set(0)
         recoveries_frame = tkinter.LabelFrame(installer_list_frame, text="Builds", padx=4, pady=4)
         recoveries_frame.grid(row=0, column=0, sticky="new")
         recoveries_list_var = tkinter.StringVar(value=recoveries_list)  # takes in a list as well
@@ -320,6 +340,10 @@ try:
             basic_toggle_tracker[key] = tkinter.IntVar(main_install_window, default_value)
             tkinter.Checkbutton(basic_toggle_frame, text=item, variable=basic_toggle_tracker[key]).pack(side="top",
                                                                                                         anchor="nw")
+        native_button = tkinter.Checkbutton(native_settings_frame,
+                                            text="Use Brunch configuration manager (experimental/unstable)",
+                                            variable=native_settings_variable)
+        native_button.pack(side="top", anchor="nw")
         install_button_label = tkinter.StringVar()
         install_button = tkinter.Button(action_buttons_frame, textvariable=install_button_label,
                                         command=install_chrome_os,

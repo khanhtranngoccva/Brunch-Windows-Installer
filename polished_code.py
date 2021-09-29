@@ -104,7 +104,7 @@ def suggest_recoveries_amd_other():
     return ["grunt"]
 
 
-def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker):
+def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker, use_native_parameter_manager):
     """
     Updates the grub2win configuration for Chrome OS. The tracker's values must be IntVars.
     :param disk: Disk to use
@@ -112,6 +112,7 @@ def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker):
     :param p_tracker: Dictionary containing all the parameters in IntVar
     :param ap_tracker: Similar
     :param bt_tracker: Similar
+    :param use_native_parameter_manager: Checks if the user chooses to use native Brunch manager.
     :return:
     """
     # STEP 1: Generates the menu entry and headers
@@ -127,20 +128,54 @@ def update_grub2win_config(disk, kern, p_tracker, ap_tracker, bt_tracker):
     parameters_string = ",".join(k for k in parameters if parameters[k] == 1)
     advanced_parameters_string = " ".join(f'{k}={v}' for k, v in advanced_parameters.items())
     basic_toggles_string = " ".join(k for k in basic_toggles if basic_toggles[k] == 1)
-    grub_lines = [
-        f'img_uuid={img_uuid}',
-        "img_path=/ChromeOS/ChromeOS.img",
-        "search --no-floppy --set=root --file $img_path",
-        "loopback loop $img_path",
-        f"linux (loop,7)/kernel-{kern} boot=local noresume noswap loglevel=7 disablevmx=off \\",
-        f'cros_secure {basic_toggles_string} {advanced_parameters_string} options={parameters_string} '
-        f'loop.max_part=16 img_uuid=$img_uuid img_path=$img_path',
-        'initrd (loop,7)/lib/firmware/amd-ucode.img (loop,7)/lib/firmware/intel-ucode.img (loop,7)/initramfs.img',
-    ]
+    if use_native_parameter_manager:
+        grub_lines = [
+            "menuentry 'Google Chrome OS'  --class custom  --class icon-android {",
+            f'\timg_uuid={img_uuid}',
+            "\timg_path=/ChromeOS/ChromeOS.img",
+            "\tsearch --no-floppy --set=root --file $img_path",
+            "\tloopback loop $img_path",
+            "\tsource (loop,12)/efi/boot/settings.cfg",
+            "\tif [ -z $verbose ] -o [ $verbose -eq 0 ]; then",
+            "\t\tlinux (loop,7)/$kernel boot=local noresume noswap loglevel=7 disablevmx=off \\",
+            f'\t\tchromeos_bootsplash=$chromeos_bootsplash cros_secure {basic_toggles_string} $cmdline_params '
+            f'options=$options loop.max_part=16 img_uuid=$img_uuid img_path=$img_path vt.global_cursor_default=0 '
+            f'brunch_bootsplash=$brunch_bootsplash quiet',
+            "\telse",
+            "\t\tlinux (loop,7)/$kernel boot=local noresume noswap loglevel=7 disablevmx=off \\",
+            f"\t\tchromeos_bootsplash=$chromeos_bootsplash cros_secure {basic_toggles_string} $cmdline_params "
+            f'options=$options loop.max_part=16 img_uuid=$img_uuid img_path=$img_path',
+            "\tfi",
+            '\tinitrd (loop,7)/lib/firmware/amd-ucode.img (loop,7)/lib/firmware/intel-ucode.img (loop,7)/initramfs.img',
+            "}",
+            "",
+            "menuentry 'Configure Google Chrome OS'  --class custom  --class icon-android {",
+            f'\timg_uuid={img_uuid}',
+            "\timg_path=/ChromeOS/ChromeOS.img",
+            "\tsearch --no-floppy --set=root --file $img_path",
+            "\tloopback loop $img_path",
+            "\tsource (loop,12)/efi/boot/settings.cfg",
+            "\tlinux (loop,7)/kernel boot=local noresume noswap loglevel=7 disablevmx=off \\",
+            "options= chromeos_bootsplash= edit_brunch_config=1 "
+            f"cros_secure {basic_toggles_string} loop.max_part=16 img_uuid=$img_uuid img_path=$img_path",
+            '\tinitrd (loop,7)/lib/firmware/amd-ucode.img (loop,7)/lib/firmware/intel-ucode.img (loop,7)/initramfs.img',
+            "}"
+        ]
+    else:
+        grub_lines = [
+            "menuentry 'Google Chrome OS'  --class custom  --class icon-android {",
+            f'\timg_uuid={img_uuid}',
+            "\timg_path=/ChromeOS/ChromeOS.img",
+            "\tsearch --no-floppy --set=root --file $img_path",
+            "\tloopback loop $img_path",
+            f"\tlinux (loop,7)/kernel-{kern} boot=local noresume noswap loglevel=7 disablevmx=off \\",
+            f'\tcros_secure {basic_toggles_string} {advanced_parameters_string} options={parameters_string} '
+            f'loop.max_part=16 img_uuid=$img_uuid img_path=$img_path',
+            '\tinitrd (loop,7)/lib/firmware/amd-ucode.img (loop,7)/lib/firmware/intel-ucode.img (loop,7)/initramfs.img',
+            "}"
+        ]
     grub_output = "\n".join(grub_lines)
-    grub_redirect = """menuentry 'Google Chrome OS'  --class custom  --class icon-android {
-    source $prefix/ChromeOS/chromeos.cfg
-    }"""
+    grub_redirect = """source $prefix/ChromeOS/chromeos.cfg"""
     new_user_section = """# start-grub2win-user-section   ********************************************************
 #
 {}

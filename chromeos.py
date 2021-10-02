@@ -262,8 +262,8 @@ try:
         installed_disk = None
         for vol_name in get_drives():
             # print(vol_name)
-            vol_free = int([i / 1024 ** 3 for i in disk_usage(path.realpath(f'{vol_name}:\\'))][2])
             try:
+                vol_free = int([i / 1024 ** 3 for i in disk_usage(path.realpath(f'{vol_name}:\\'))][2])
                 if ssd.is_ssd(f'{vol_name}:\\'):
                     disk_dict["SSD {} {} GBs free".format(f'{vol_name}:\\', vol_free)] = vol_name
                     ssd_dict[vol_name] = "SSD"
@@ -272,8 +272,9 @@ try:
                     ssd_dict[vol_name] = "HDD"
                 if os.path.exists(f"{vol_name}:\\ChromeOS\\chromeos_installed"):
                     installed_disk = vol_name
-            except KeyError:  # in case it's not a physical drive
-                pass
+            except Exception as e:
+                print(f'Disk {vol_name}:\\ error: {e}. '
+                      f'It is possible that this drive is a CD/DVD drive or network drive.')
         all_recoveries = get_recoveries()
         main_install_window = tkinter.Tk()
         size = 1200, 600

@@ -430,7 +430,14 @@ def is_linux_enabled(distro):
     elif wsl_no_distributions in result or distro not in result and wsl_list_header in result:
         # checks if there is no distribution, or the distribution is not present
         print("An instance of {} is being installed on your device. Please wait.".format(distro))
-        os.popen("wsl --install -d {}".format(distro)).readlines()
+        if os.path.exists(".\\TEMP\\wsl_kernel_downloaded"):
+            pass
+        else:
+            download_url("https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", ".\\TEMP")
+            with open(".\\TEMP\\wsl_kernel_downloaded", "w") as file:
+                print("", file=file)
+        os.popen("msiexec /i \"TEMP\\wsl_update_x64.msi\" /quiet").read()
+        os.popen("wsl --install -d {}".format(distro)).read()
         # execution of the last line stops, but installation hasn't been completed. therefore must check again.
         while True:  # check again for the presence of the OS before exiting
             time.sleep(2)
